@@ -19,4 +19,4 @@ set(MYPROJECT_SRCS
 
 add_library(conwayGL ${MYPROJECT_SRCS})
 
-target_link_libraries(gridrt PRIVATE ${ALL_THIRD_PARTY_LIBRARIES})
+target_link_libraries(conwayGL PRIVATE ${ALL_THIRD_PARTY_LIBRARIES})
