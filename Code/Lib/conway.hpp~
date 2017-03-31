@@ -1,0 +1,345 @@
+/*=============================================================================
+
+  GRIDRT: A software package for computing ray trajectories in a grid.
+    DESCRIPTION
+        Consider a domain D defined by a rectangular grid. The characteristics 
+        of this grid are:
+            - Nx points along the x axis, spaced dx
+            - Ny points along the y axis, spaced dy
+        The matrix c defines the sound speed at every grid point in D. Also, 
+        the corresponding matrix n defines the inverse of c.
+
+        Consider a source point S with initial conditions (x0, p0) in the 
+        phase space (x, p). The problem solved by GRIDRT is the computation 
+        of the ray trajectory that solves the Hamiltonian:
+            dx/dt = p/(n^2)
+            dp/dt = grad(n)/n   (grad(n) represents the gradient of n)
+        given the initial conditions (x0, p0). In order to simplify this 
+        problem, an equivalent ODE system is solved using a different 
+        parametrisation for the Hamiltonian, in particular using the change
+        of variables:
+            dt = n^2 d\tau
+        
+        The logic for solving the ODE system is contained in this class. The
+        structure that contains the ray trajectories' data is provided in a class
+        named SOURCE. Please refer to this class to see the data structure.
+
+  Copyright (C) 2017 Kiko Rul·lan, Marta M. Betcke
+
+  See LICENSE.txt in the top level directory for details.
+
+=============================================================================*/
+
+#ifndef gridRT_h
+#define gridRT_h
+#include "mpBasicTypes.h"
+#include "source.h"
+#include <cstdlib>
+#include <memory>
+#include <vector>
+
+#include <armadillo>
+
+using namespace arma;
+
+namespace RayTracing{
+
+// Ray 
+typedef std::vector< std::unique_ptr<Source> > SourceV; 
+
+
+class GridRT {
+    /*=======================================================================
+    ===================                          ============================
+    ===================           DATA           ============================ 
+    ===================                          ============================
+    =========================================================================*/
+    private:
+        // Domain definition
+        int Nx, Ny; // Number of points for the grid in the x and y axis, respectively
+        double dx, dy; // Spatial separation for the grid in the x and y axis, respectively
+        matP c, n; // sound speed and its inverse matrices
+        SourceV source;  // Vector of sources 
+
+    /*=======================================================================
+    ===================                          ============================
+    ===================         FUNCTIONS        ============================ 
+    ===================                          ============================
+    =========================================================================*/
+    public:
+        /*=======================================================================
+        ======     Constructors
+        =========================================================================*/
+        GridRT(int const& Nx, double const& dx, int const& Ny, double const& dy);
+            /* GRIDRT creates a GRIDRT object initialising it with the given Nx, Ny, dx, dy
+                INPUTS
+                    Nx: number of points in the x axis
+                    dx: spatial separation in the x axis
+                    Ny: number of points in the y axis
+                    dy: spatial separation in the y axis
+                OUTPUTS
+                    GRIDRT object
+                EXCEPTIONS
+                    Invalid argument exception when:
+                        - Nx or Ny are lower than 1
+                        - dx or dy are lower or equal to 0    
+            */
+        GridRT(std::string &iFileName);
+            /* GRIDRT opens a file under the given name and creates a GRIDRT object initialising it 
+               from the data read from the file. Calls the previous GridRT constructor after reading data.
+                INPUTS
+                    iFile: input file with the following two lines at the given file position:
+                            Nx Ny
+                            dx dy
+                OUTPUTS
+                    GRIDRT object
+                EXCEPTIONS
+                    Run time exception in the following cases:
+                        - Problem opening given file name
+                        - Incorrect format
+                    Invalid argument exception when:
+                        - Nx or Ny are lower than 1
+                        - dx or dy are lower or equal to 0    
+                    
+            */
+
+        /*=======================================================================
+        ======     Setters
+        =========================================================================*/
+    protected:
+        void setDimensions(int const& Nx, double const& dx, int const& Ny, double const& dy);
+            /* SETDIMENSIONS assigns the dimensions to the GRIDRT object. Creates the C & N matrices
+                 INPUTS
+                    Nx: number of points in the x axis
+                    dx: spatial separation in the x axis
+                    Ny: number of points in the y axis
+                    dy: spatial separation in the y axis
+                OUTPUTS
+                    -
+                EXCEPTIONS
+                    Not safe
+            */
+    public:
+        void setC(matP &M);
+            /* SETC assigns the matrix pointer M to the c matrix that defines the sound speed
+               Computes the corresponding inverse and assigns it to n
+                INPUTS
+                    M: matrix pointer 
+                OUTPUTS
+                    -
+                EXCEPTIONS
+                    Throws an exception when the minimum of M is lower than 0
+            */
+
+        /*=======================================================================
+        ======     Getters
+        =========================================================================*/
+    public:
+        void getDimensions(void);
+            // GETDIMENSIONS writes in the standard output the dimensions of the grid
+        int getNX(void);
+            /* GETNX returns the value of the member Nx
+                INPUTS
+                    -
+                OUTPUTS
+                    Nx: number of points along the x coordinate
+            */
+        int getNY(void);
+            /* GETNY returns the value of the member Ny
+                INPUTS
+                    -
+                OUTPUTS
+                    Ny: number of points along the y coordinate
+            */
+        double getDX(void);
+            /* GETDX returns the value of the member dx
+                INPUTS
+                    -
+                OUTPUTS
+                    dx: spacing of grid points along the x coordinate
+            */
+        double getDY(void);
+            /* GETDY returns the value of the member dy
+                INPUTS
+                    -
+                OUTPUTS
+                    dy: spacing of grid points along the y coordinate
+            */
+        void getC(void);
+            // GETC writes in the standard output the sound speed matrix c
+        void getN(void);
+            // GETN writes in the standard output the sound speed matrix inverse n
+        rowvecP getN(matIP &coord);
+            /* GETN returns the n values for the given grid point coordinates
+                INPUTS
+                    coord: pointer to a matrix that contains a number 
+                        of grid point coordinates
+                OUTPUTS
+                    n: row vector pointer with the corresponding n values for the 
+                        given coordinate points
+            */
+        rowvecP getN(rowvecIP &coordX, rowvecIP &coordY);
+            /* GETN returns the n values for the given grid point coordinates
+                INPUTS
+                    coordX: pointer to a row vector that contains a number 
+                        of grid points x-coordinates 
+                    coordY: pointer to a row vector that contains a number 
+                        of grid points y-coordinates 
+                OUTPUTS
+                    n: row vector pointer with the corresponding n values for the 
+                        given grid point coordinates
+            */
+        int getNSources(void);
+            /* GETNSOURCES returns the size of the vector of sources
+                INPUTS
+                    -
+                OUTPUTS
+                    size: number of sources
+            */
+
+        /*=======================================================================
+        ======     Getters
+        =========================================================================*/
+    public:
+        void newSource(vecP &x0, int const& nRays, double const& angleMin, double const& angleMax, double const& step, double const& tauMax);
+            /* NEWSOURCE inserts a new source in the vector of sources. 
+                INPUTS
+                    x0: pointer to a vector that determines the source position
+                    nRays: number of rays that will propagate from the source
+                    angleMin: initial angle for shooting the rays
+                    angleMax: end angle for shooting the rays
+                       Rays will be shot in equally spaced angles from angleMin to angleMax
+                    step: step size for solving the ODE for the Hamiltonian
+                    tauMax: maximum value for tau in the ODE solution. It
+                        determines the number of steps taken
+                OUTPUTS
+                    -
+            */
+
+        /*=======================================================================
+        ======     Compute Ray Trajectories
+        =========================================================================*/
+    public:
+        matIP findCoordinates(matP &point);
+            /* FINDCOORDINATES returns the coordinates of the closest grid points
+               for the given points  
+                INPUTS
+                    point: pointer to a matrix that contains a number 
+                        of points
+                OUTPUTS
+                    coord: pointer to a matrix that contains the corresponding
+                        grid points coordinates for the given points
+                MOTIVATION
+                    A problem that arises when computing the ray trajectories over 
+                    a grid is the need to compute the gradient of n. Since n 
+                    is only defined in the grid points, while the trajectory can
+                    describe any curve, we need to compute the gradient over grid points.
+            */
+        matP gradN(matIP &coord);
+            /* GRADN computes the gradient of n at the given coordinate points
+                INPUTS
+                    coord: pointer to a matrix that contains a number 
+                        of grid point coordinates
+                OUTPUTS
+                    grad: pointer to matrix that contains the gradient of n 
+                        at the corresponding points
+            */
+        matP derive(double const& tau, int const& index, matP &X, int const& nS);
+            /* DERIVE returns the derivative of p at the given index for the 
+               corresponding tau, location X and source nS
+                INPUTS
+                    tau: value for the tau parameter
+                    index: index in the ray to compute the derivative
+                    X: pointer to a matrix that contains the X positions 
+                        to obtain the gradient of n
+                    nS: source index
+                OUTPUTS
+                    dp: derivative of p
+            */
+        matP stepRK4(double const& tau, int const& index, matP &X, double h, int const& nS);
+            /* STEPRK4 returns the next X position when solving the ODE for the Hamiltonian,
+               given an index, the current X position and a step size
+                INPUTS
+                    tau: value for the tau parameter
+                    index: index in the ray to compute the step
+                    X: pointer to a matrix that contains the X positions 
+                    nS: source index
+                OUTPUTS
+                    Xn: next X position
+            */
+        void stepSource(int const& index, int const& nS);
+            /* STEPSOURCE computes a step in the ray trajectories for the given index and source
+                INPUTS
+                    index: index in the ray to compute the step 
+                    nS: source index
+                OUTPUTS
+                    -
+            */
+    public:
+        void computeSource(int const& nS);
+            /* COMPUTESOURCE computes all the ray trajectories for the given source
+                INPUTS
+                    nS: source index
+                OUTPUTS
+                    -
+            */
+
+        /*=======================================================================
+        ======     Load data from file stream
+        =========================================================================*/
+    public:
+        void loadC(std::string &iFileName);
+            /* LOADC opens a file under the given name and loads from it the data into the C matrix
+                INPUTS
+                    iFileName: input file name with the C matrix
+                        Each row contains Ny values. There should be Nx rows
+                OUTPUTS
+                    -
+                EXCEPTIONS
+                    Run time error in the following cases:
+                        - Problem opening file for given file name
+                        - Incorrect format
+            */
+        void loadSources(std::string &iFileName);
+            /* LOADSOURCES opens a file under the given name and generates a source for each line of data 
+                INPUTS
+                    iFileName: input file name with a source definition in each line
+                        Each line contains 7 parameters as follows:
+                            xCoord yCoord nRays angleMin angleMax step tauMax
+                OUTPUTS
+                    -
+                EXCEPTIONS
+                    Run time error when problem opening file for given file name
+
+            */
+    
+        /*=======================================================================
+        ======     Write to Output
+        =========================================================================*/
+    public:
+        void writeTrajectories(int const& nS);
+            /* WRITETRAJECTORIES Writes the ray trajectories of source nS in a file named
+               "Source(nR).dat"
+                INPUTS
+                    nS: source index
+                OUTPUTS
+                    -
+            */
+        void writeTrajectories(void);
+            /* WRITETRAJECTORIES Writes the trajectories for all sources in files named
+               "Source(nR).dat" with nR the source index
+                MOTIVATION
+                    Extract the results of the computations and be able to plot or modify them
+            */
+        void writeDimensions(void);
+            /* WRITEDIMENSIONS Writes the dimensions of the domain as well as the
+               number of computed sources in a file named "dimensions.dat"
+                MOTIVATION
+                    Provide the context for plotting the computed rays
+            */
+
+};
+
+} 
+
+#endif
