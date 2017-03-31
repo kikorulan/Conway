@@ -1,0 +1,1 @@
+/usr/bin/c++   -O3 -DNDEBUG   CMakeFiles/runConway.dir/runConway.cpp.o  -o ../../bin/runConway -rdynamic ../../bin/libconwayGL.a 

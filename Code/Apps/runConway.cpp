@@ -1,8 +1,8 @@
 /*=============================================================================
 
-  RUNGRIDRT: Run the ray tracing method over a grid
+  RUNCONWAY: Run Conway's Game of Life
 
-  Copyright (C) 2017 Kiko Rul·lan, Marta M. Betcke
+  Copyright (C) 2017 Kiko Rul·lan
 
   This software is distributed WITHOUT ANY WARRANTY; without even
   the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -12,8 +12,8 @@
 
 =============================================================================*/
 
-#include <gridRT.h>
-#include <mpBasicTypes.h>
+#include <conway.hpp>
+#include <basicTypes.hpp>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -27,11 +27,8 @@
 
 using namespace std;
 using namespace arma;
-using namespace RayTracing;
 
-
-typedef std::unique_ptr<GridRT> GridRT_p;
-
+typedef std::unique_ptr<Conway> Conway_p;
 
 int main(int argc, char* argv[])
 {
@@ -40,22 +37,19 @@ int main(int argc, char* argv[])
 =========================================================================*/
     // Tell the user how to run the program
     if (argc != 4) {
-        cerr << "USAGE: " << argv[0] << " input_file_dimensions input_file_sound_speed input_file_sources " << endl;
+        cerr << "USAGE: " << argv[0] << " input_file_dimensions input_file_doman number_step" << endl;
         cerr << endl;
         cerr << "    INPUT_FILE_DIMENSIONS format:" << endl;
         cerr << "        Nx Ny" << endl;
-        cerr << "        dx dy" << endl;
         cerr << endl;
-        cerr << "    INPUT_FILE_SOUND_SPEED format:" << endl;
-        cerr << "        c_{1,1}  ... c_{1,Ny}" << endl;
+        cerr << "    INPUT_FILE_DOMAIN format:" << endl;
+        cerr << "        a_{1,1}  ... a_{1,Ny}" << endl;
         cerr << "           ...   ...  ... " << endl;
-        cerr << "        c_(Nx,1} ... c_{Nx,Ny1}" << endl;
-        cerr << "    where c is the matrix that defines the sound speed in the domain." << endl;
+        cerr << "        a_(Nx,1} ... a_{Nx,Ny1}" << endl;
+        cerr << "    where A is the matrix that defines the initial state of the matrix." << endl;
         cerr << endl;
-        cerr << "    INPUT_FILE_SOURCES format:" << endl;
-        cerr << "    N lines, each corresponding to a source." << endl;
-        cerr << "    Each line contains 7 parameters as follows:" << endl;
-        cerr << "        xCoord yCoord nRays angleMin angleMax step tauMax" << endl;
+        cerr << "    NUMBER_STEPS:" << endl;
+        cerr << "    Corresponds to the number of steps to compute." << endl;
         cerr << endl;
         return 1;
     }
@@ -65,24 +59,16 @@ int main(int argc, char* argv[])
 =========================================================================*/
     std::string dimensionsFile;
     dimensionsFile = argv[1];
-    GridRT_p grid(new GridRT(dimensionsFile));
+    Conway_p C(new Conway(dimensionsFile));
 
-    std::string cFile;
-    cFile = argv[2];
-    grid->loadC(cFile);
+    std::string domainFile;
+    domainFile = argv[2];
+    C->loadDomain(domainFile);
 
-    std::string sourcesFile;
-    sourcesFile = argv[3];
-    grid->loadSources(sourcesFile);
-
-    for (int i = 0; i < grid->getNSources(); i++)
-        grid->computeSource(i);
 
 /*=======================================================================
 ===================   WRITE OUTPUT                    =================== 
 =========================================================================*/    
-    grid->writeTrajectories();
-    grid->writeDimensions();
     
     return 0;
 }

@@ -8,6 +8,7 @@
 
 =============================================================================*/
 
+#include "basicTypes.hpp"
 #include "conway.hpp"
 #include <iostream>
 #include <fstream>
@@ -17,6 +18,8 @@
 #include <cmath>
 #include <vector>
 #include <memory>
+
+#define ARMA_USE_CXX11
 #include <armadillo>
 
 

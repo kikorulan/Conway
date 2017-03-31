@@ -8,8 +8,9 @@
 
 =============================================================================*/
 
-#ifndef gridRT_hpp
-#define gridRT_hpp
+#include "basicTypes.hpp"
+#ifndef Conway_hpp
+#define Conway_hpp
 #include <cstdlib>
 #include <memory>
 #include <vector>
@@ -70,7 +71,7 @@ class Conway {
         ======     Setters
         =========================================================================*/
     protected:
-        void setDimensions(int const& Nx, double const& dx, int const& Ny, double const& dy);
+        void setDimensions(int const& Nx, int const& Ny);
             /* SETDIMENSIONS assigns the dimensions to the CONWAY object. Creates the domain matrix
                  INPUTS
                     Nx: number of points in the x axis
@@ -131,7 +132,5 @@ class Conway {
             */
 
 };
-
-} 
 
 #endif
