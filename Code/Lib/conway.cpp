@@ -104,6 +104,13 @@ int Conway::getNY(void) { return Ny; }
 
 /*============================================================================
 ==============                                            ====================
+==============         Compute Conway's GoL               ====================
+==============                                            ====================
+==============================================================================*/
+
+
+/*============================================================================
+==============                                            ====================
 ==============         Load and write data                ====================
 ==============                                            ====================
 ==============================================================================*/
@@ -127,7 +134,7 @@ void Conway::loadDomain(std::string &iFileName){
     std::stringstream ss;
     matP domain; 
   
-    // C matrix
+    // Domain matrix
     int nCol = 0, nRow = 0;
     double val;
     domain.reset(new mat(Nx, Ny));
@@ -160,3 +167,30 @@ void Conway::loadDomain(std::string &iFileName){
 ====== Write to output
 =========================================================================*/
 
+// Write output to given file
+void Conway::writeDomain(std::string &oFileName){
+    // Open output file
+    std::ofstream oFile;
+    oFile.open(oFileName);
+    if (oFile.fail()){
+        std::ostringstream msg;
+        msg << "writeDomain(): Opening file '" << oFileName
+            << "' failed, could not be created.";
+        throw std::runtime_error(msg.str());
+    }
+    
+    for (int i = 0; i < Ny; i++){
+        for (int j = 0; j < Nx; j++)
+            oFile << (*domain)(j, i) << " ";
+        oFile << std::endl;
+    }
+}
+
+// Write output in the standard output
+void Conway::writeDomain(void){
+    for (int i = 0; i < Ny; i++){
+        for (int j = 0; j < Nx; j++)
+            std::cout << (*domain)(j, i) << " ";
+        std::cout << std::endl;
+    }
+}

@@ -39,7 +39,7 @@ class Conway {
         /*=======================================================================
         ======     Constructors
         =========================================================================*/
-        Conway(int const& Nx, int const& Ny);
+        Conway(int const& Nx, int const& Ny); 
             /* CONWAY creates a CONWAY object initialising it with the given Nx, Ny
                 INPUTS
                     Nx: number of points in the x axis
@@ -130,6 +130,30 @@ class Conway {
                         - Incorrect format
                         - Invalid value for a pixel in the domain
             */
+
+        /*=======================================================================
+        ======     Write to output
+        =========================================================================*/
+    public:
+        void writeDomain(std::string &oFileName);
+            /* WRITEDOMAIN opens a file under the given name and writes the current state of the domain
+                INPUTS
+                    oFileName: output file name to write the domain matrix
+                OUTPUTS
+                    -
+                EXCEPTIONS
+                    Run time error in the following cases:
+                        - Problem opening file for given file name
+            */
+        void writeDomain(void);
+            /* WRITEDOMAIN writes the domain in the standard output
+                INPUTS
+                    -
+                OUTPUTS
+                    -
+            */
+
+
 
 };
 
