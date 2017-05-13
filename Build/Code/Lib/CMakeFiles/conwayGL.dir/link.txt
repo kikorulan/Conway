@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../bin/libconwayGL.a  CMakeFiles/conwayGL.dir/basicTypes.cpp.o CMakeFiles/conwayGL.dir/conway.cpp.o
-/usr/bin/ranlib ../../bin/libconwayGL.a

@@ -65,10 +65,13 @@ int main(int argc, char* argv[])
     domainFile = argv[2];
     C->loadDomain(domainFile);
 
-    C->writeDomain();
 /*=======================================================================
-===================   WRITE OUTPUT                    =================== 
+===================   COMPUTE STEPS AND WRITE OUTPUT  =================== 
 =========================================================================*/    
+    int nSteps;
+    std::stringstream(argv[3]) >> nSteps;
+    C->computeNSteps(nSteps);
     
+    std::cout << -3%2 << std::endl;
     return 0;
 }

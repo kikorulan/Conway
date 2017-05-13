@@ -17,7 +17,7 @@
 #include "Conway_CatchMain.hpp"
 
 // Global! Only do this in a private test harness.
-namespace mp
+namespace arg
 {
 int argc;
 char** argv;
@@ -25,8 +25,8 @@ char** argv;
 
 int main (int argc, char * const argv[])
 {
-  mp::argc = argc;
-  mp::argv = const_cast<char**>(argv);
+  arg::argc = argc;
+  arg::argv = const_cast<char**>(argv);
 
   Catch::Session session; // There must be exactly once instance
 

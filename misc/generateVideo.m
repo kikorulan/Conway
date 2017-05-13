@@ -1,11 +1,23 @@
-
 % Read data from files
+clear all;
 
-filename = 'myfile01.txt';
+% Create video handle
+v = VideoWriter('ConwayGOL.avi');
+v.FrameRate = 10;
+open(v);
+
+cd output_data;
+% Number of steps
+nSteps = 200; 
+% Read files
 delimiterIn = ' ';
 headerlinesIn = 0;
-A = importdata(filename,delimiterIn,headerlinesIn);
+for n = 1:nSteps
+    filename = strcat('Matrix', int2str(n),'.dat');
+    matrix{n} = importdata(filename, delimiterIn, headerlinesIn);
+    writeVideo(v,matrix{n});
+end
 
-v = VideoWriter('newfile.avi');
-open(v)
-writeVideo(v,rand(300))
+
+close(v);
+cd ..;

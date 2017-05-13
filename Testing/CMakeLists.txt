@@ -15,8 +15,9 @@
 set(DATA_DIR ${CMAKE_SOURCE_DIR}/Testing/Data)
 set(TMP_DIR ${CMAKE_BINARY_DIR}/Testing/Temporary)
 
-#set(TEST_CASES
-#)
+set(TEST_CASES
+     Test_Conway
+)
 
 foreach(_test_case ${TEST_CASES})
   add_executable(${_test_case} ${_test_case}.cpp Conway_CatchMain.cpp)
@@ -30,5 +31,4 @@ endforeach()
 # Dont forget its:  add_test(<test name (globally unique) > <exe name> <argument1> <argument2>
 ##################################################################################################
 
-#add_test(NoArgs ${EXECUTABLE_OUTPUT_PATH}/Test_Ray)
-#add_test(1File ${EXECUTABLE_OUTPUT_PATH}/mpCommandLineArgsTest ${DATA_DIR}/input.txt)
+add_test(2Files ${EXECUTABLE_OUTPUT_PATH}/Test_Conway ${DATA_DIR}/dimensions.dat ${DATA_DIR}/domain.dat)

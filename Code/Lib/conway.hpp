@@ -28,7 +28,7 @@ class Conway {
     private:
         // Domain definition
         int Nx, Ny; // Number of points for the grid in the x and y axis, respectively
-        matP domain; // Domain definition
+        matIP domain, domainNext; // Domain definition
 
     /*=======================================================================
     ===================                          ============================
@@ -42,8 +42,8 @@ class Conway {
         Conway(int const& Nx, int const& Ny); 
             /* CONWAY creates a CONWAY object initialising it with the given Nx, Ny
                 INPUTS
-                    Nx: number of points in the x axis
-                    Ny: number of points in the y axis
+                    NxB: number of points in the x axis (Nx) plus two for the boundary
+                    NyB: number of points in the y axis (Ny) plus two for the boundary
                 OUTPUTS
                     CONWAY object
                 EXCEPTIONS
@@ -74,15 +74,15 @@ class Conway {
         void setDimensions(int const& Nx, int const& Ny);
             /* SETDIMENSIONS assigns the dimensions to the CONWAY object. Creates the domain matrix
                  INPUTS
-                    Nx: number of points in the x axis
-                    Ny: number of points in the y axis
+                    NxB: number of points in the x axis (Nx) plus two for the boundary
+                    NyB: number of points in the y axis (Ny) plus two for the boundary
                 OUTPUTS
                     -
                 EXCEPTIONS
                     Not safe
             */
     public:
-        void setDomain(matP &M);
+        void setDomain(matIP &M);
             /* SETC assigns the matrix pointer M to the domain matrix 
                 INPUTS
                     M: matrix pointer 
@@ -99,18 +99,56 @@ class Conway {
         void getDimensions(void);
             // GETDIMENSIONS writes in the standard output the dimensions of the grid
         int getNX(void);
-            /* GETNX returns the value of the member Nx
+            /* GETNXB returns the value of the member Nx
                 INPUTS
                     -
                 OUTPUTS
                     Nx: number of points along the x coordinate
             */
         int getNY(void);
-            /* GETNY returns the value of the member Ny
+            /* GETNYB returns the value of the member Ny
                 INPUTS
                     -
                 OUTPUTS
                     Ny: number of points along the y coordinate
+            */
+
+        /*=======================================================================
+        ======     Compute CGOL
+        =========================================================================*/
+    public:
+        int countAliveNeigh(int const& coordX, int const& coordY);
+            /* COUNTALIVENEIGHBOURS returns the number of alive neighbours for the given coordinate
+                INPUTS
+                    coordX: x coordinate of the point to compute the neighbours
+                    coordY: y coordinate of the point to compute the neighbours
+                OUTPUTS
+                    alive: number of alive neighbours
+            */
+        
+        void updatePixel(int const& coordX, int const& coordY);
+            /* UPDATEPIXEL computes the new state of Conway's Game of Life for the given pixel
+                INPUTS
+                    coordX: x coordinate of the point to update
+                    coordY: y coordinate of the point to update
+                OUTPUTS
+                    -
+            */
+
+        void updateMatrix(void);
+            /* UPDATEMATRIX computes the new state of Conway's Game of Life for the domain
+                INPUTS
+                    coordX: x coordinate of the point to update
+                    coordY: y coordinate of the point to update
+                OUTPUTS
+                    -
+            */
+        void computeNSteps(int const& nSteps);
+            /* COMPUTENSTEPS computes and writes nSteps steps of CGOL
+                INPUTS
+                    nSteps: number of steps to compute
+                OUTPUTS
+                    -
             */
 
         /*=======================================================================
@@ -135,12 +173,12 @@ class Conway {
         ======     Write to output
         =========================================================================*/
     public:
-        void writeDomain(std::string &oFileName);
+        void writeDomain(int const& nStep);
             /* WRITEDOMAIN opens a file under the given name and writes the current state of the domain
                 INPUTS
-                    oFileName: output file name to write the domain matrix
+                    nStep: step number
                 OUTPUTS
-                    -
+                    File in output_data with name MatrixN.dat, where N is the number of step
                 EXCEPTIONS
                     Run time error in the following cases:
                         - Problem opening file for given file name
@@ -152,8 +190,6 @@ class Conway {
                 OUTPUTS
                     -
             */
-
-
 
 };
 

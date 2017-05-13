@@ -12,10 +12,10 @@
 
 =============================================================================*/
 
-#ifndef mpCatchMain_h
-#define mpCatchMain_h
+#ifndef ConwayCatchMain_h
+#define ConwayCatchMain_h
 
-namespace mp
+namespace arg
 {
 
 extern int argc;
