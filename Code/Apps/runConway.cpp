@@ -28,8 +28,6 @@
 using namespace std;
 using namespace arma;
 
-typedef std::unique_ptr<Conway> Conway_p;
-
 int main(int argc, char* argv[])
 {
 /*=======================================================================
@@ -59,19 +57,18 @@ int main(int argc, char* argv[])
 =========================================================================*/
     std::string dimensionsFile;
     dimensionsFile = argv[1];
-    Conway_p C(new Conway(dimensionsFile));
+    matIP domain(newConway(dimensionsFile).release());
 
     std::string domainFile;
     domainFile = argv[2];
-    C->loadDomain(domainFile);
+    loadDomain(domain, domainFile);
 
 /*=======================================================================
 ===================   COMPUTE STEPS AND WRITE OUTPUT  =================== 
 =========================================================================*/    
     int nSteps;
     std::stringstream(argv[3]) >> nSteps;
-    C->computeNSteps(nSteps);
+    computeNSteps(domain, nSteps);
     
-    std::cout << -3%2 << std::endl;
     return 0;
 }

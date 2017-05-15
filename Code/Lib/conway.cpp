@@ -29,19 +29,8 @@ using namespace arma;
 ====== Constructors
 =========================================================================*/
 
-// Constructor for given dimensions 
-Conway::Conway(int const& Nx, int const& Ny) {
-    // Check input values
-    if (Nx < 1 || Ny < 1)
-        throw std::invalid_argument("CONWAY object not created. Invalid value(s) for grid dimensions.\n");
-    setDimensions(Nx, Ny);
-    // Message: CONWAY created
-    std::cout << "CONWAY created." << std::endl;
-    getDimensions();
-}
-
 // Constructor from input file stream iFile 
-Conway::Conway(std::string &iFileName){
+matIP newConway(std::string &iFileName){
     std::ifstream iFile;
     iFile.open(iFileName);
     if (iFile.fail()){
@@ -63,45 +52,22 @@ Conway::Conway(std::string &iFileName){
     if (Nx < 1 || Ny < 1 )
         throw std::invalid_argument("CONWAY not created. Invalid value(s) for grid dimensions.\n");
 
-    setDimensions(Nx, Ny);
+    matIP domain(new matI(Nx, Ny));
     // Message: CONWAY created
     std::cout << "CONWAY created." << std::endl;
-    getDimensions();
-}
-
-/*=======================================================================
-====== Setters
-=========================================================================*/
-// Set the dimensions of the CONWAY domain
-void Conway::setDimensions(int const& Nx, int const& Ny){
-    // Assign values
-    Conway::Nx = Nx; // Assign Nx points at the x axis
-    Conway::Ny = Ny; // Assign Ny points at the y axis
-    domain.reset(new matI(Nx, Ny)); // Create domain matrix 
-    (*domain).fill(0);
-    domainNext.reset(new matI(Nx, Ny));
-}
-
-// Set domain equal to the given matrix
-void Conway::setDomain(matIP &M){
-    domain.reset(M.release());
+    getDimensions(domain);
+    return domain;
 }
 
 /*=======================================================================
 ====== Getters for c and n
 =========================================================================*/
 // Get the dimensions at the standard output
-void Conway::getDimensions(void){
+void getDimensions(matIP &domain){
     std::cout << "Dimensions:" << std::endl;
-    std::cout << "    Nx: " << Nx << std::endl;
-    std::cout << "    Ny: " << Ny << std::endl;
+    std::cout << "    Number of rows: " << (*domain).n_rows << std::endl;
+    std::cout << "    Number of cols: " << (*domain).n_cols << std::endl;
 }
-
-// Get Nx
-int Conway::getNX(void) { return Nx; }
-
-// Get Ny
-int Conway::getNY(void) { return Ny; }
 
 /*============================================================================
 ==============                                            ====================
@@ -110,12 +76,12 @@ int Conway::getNY(void) { return Ny; }
 ==============================================================================*/
 
 // Count alive neighbours
-int Conway::countAliveNeigh(int const& coordX, int const& coordY){
+int countAliveNeigh(matIP &domain, int const& coordX, int const& coordY){
     int alive = 0;
-    int xNext = (coordX+1)%Nx;
-    int xPrev = (coordX-1+Nx)%Nx;
-    int yNext = (coordY+1)%Ny;
-    int yPrev = (coordY-1+Ny)%Ny;
+    int xNext = (coordX+1)%(*domain).n_rows;
+    int xPrev = (coordX-1+(*domain).n_rows)%(*domain).n_rows;
+    int yNext = (coordY+1)%(*domain).n_cols;
+    int yPrev = (coordY-1+(*domain).n_cols)%(*domain).n_cols;
     alive = alive + (*domain)(xPrev, yPrev);
     alive = alive + (*domain)(coordX, yPrev);
     alive = alive + (*domain)(xNext, yPrev);
@@ -128,8 +94,8 @@ int Conway::countAliveNeigh(int const& coordX, int const& coordY){
 }
 
 // Compute the new state of the given pixel
-void Conway::updatePixel(int const& coordX, int const& coordY){
-    int alive = countAliveNeigh(coordX, coordY);
+void updatePixel(matIP &domain, matIP &domainNext, int const& coordX, int const& coordY){
+    int alive = countAliveNeigh(domain, coordX, coordY);
     int state = (*domain)(coordX, coordY);
     if (state == 1){
         if (alive < 2 || alive > 3)
@@ -146,23 +112,23 @@ void Conway::updatePixel(int const& coordX, int const& coordY){
 }
 
 // Compute the new state of the matrix
-void Conway::updateMatrix(void){
+void updateMatrix(matIP &domain, matIP &domainNext){
     // Update interior points
-    for (int i = 0; i < Ny; i++)
-        for (int j = 0; j < Nx; j++)
-            updatePixel(j, i);
-        
-    domain.reset(domainNext.release());
-    domainNext.reset(new matI(Nx, Ny));
+    for (int j = 0; j < (*domain).n_rows; j++)
+        for (int i = 0; i < (*domain).n_cols; i++)
+            updatePixel(domain, domainNext, j, i);
+    domainNext.swap(domain);
+    (*domainNext).fill(0);
 }
 
 // Computes and writes n steps in the corresponding output files
-void Conway::computeNSteps(int const& nSteps){
+void computeNSteps(matIP &domain, int const& nSteps){
+    matIP domainNext(new matI((*domain).n_rows, (*domain).n_cols));
     // Create the output directory
     int i = system("mkdir -p output_data");
     for (int i = 1; i <= nSteps; i++){
-        updateMatrix();
-        writeDomain(i);
+        updateMatrix(domain, domainNext);
+        writeDomain(domain, i);
     }
 }
 
@@ -176,7 +142,7 @@ void Conway::computeNSteps(int const& nSteps){
 ====== Load data from file stream
 =========================================================================*/
 /* Load domain matrix from input file */
-void Conway::loadDomain(std::string &iFileName){
+void loadDomain(matIP &domain, std::string &iFileName){
     // Open input file
     std::ifstream iFile;
     iFile.open(iFileName);
@@ -189,13 +155,12 @@ void Conway::loadDomain(std::string &iFileName){
 
     std::string str;
     std::stringstream ss;
-    matIP domain; 
   
     // Domain matrix
     int nCol = 0, nRow = 0;
     double val;
-    domain.reset(new matI(Nx, Ny));
-    domain->fill(0);
+    int Nx = (*domain).n_rows;
+    int Ny = (*domain).n_cols;
     while(getline(iFile, str)){
         nCol = 0;
         ss << str;
@@ -216,7 +181,6 @@ void Conway::loadDomain(std::string &iFileName){
     if (nCol < Ny-1 || nRow < Nx-1)
         throw std::invalid_argument(std::string("Error: Given matrix exceeds dimensions of domain.\n"));
 
-    setDomain(domain);
     iFile.close();
 }
 
@@ -225,7 +189,7 @@ void Conway::loadDomain(std::string &iFileName){
 =========================================================================*/
 
 // Write output to given file
-void Conway::writeDomain(int const& nStep){
+void writeDomain(matIP &domain, int const& nStep){
     // Save the data
     std::ofstream outputFile;
     std::string str = "output_data/Matrix" + std::to_string(nStep) + ".dat";
@@ -238,9 +202,8 @@ void Conway::writeDomain(int const& nStep){
         throw std::runtime_error(msg.str());
     }
     
-
-    for (int j = 0; j < Nx; j++){
-        for (int i = 0; i < Ny; i++)
+    for (int j = 0; j < (*domain).n_rows; j++){
+        for (int i = 0; i < (*domain).n_cols; i++)
             outputFile << (*domain)(j, i) << " ";
         outputFile << std::endl;
     }
@@ -248,10 +211,9 @@ void Conway::writeDomain(int const& nStep){
 }
 
 // Write output in the standard output
-void Conway::writeDomain(void){
-
-    for (int j = 0; j < Nx; j++){
-        for (int i = 0; i < Ny; i++)
+void writeDomain(matIP &domain){
+    for (int j = 0; j < (*domain).n_rows; j++){
+        for (int i = 0; i < (*domain).n_cols; i++)
             std::cout << (*domain)(j, i) << " ";
         std::cout << std::endl;
     }
