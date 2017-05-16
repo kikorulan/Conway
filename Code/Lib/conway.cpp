@@ -22,6 +22,10 @@
 #define ARMA_USE_CXX11
 #include <armadillo>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 using namespace arma;
 
 /*=======================================================================
@@ -114,9 +118,12 @@ void updatePixel(cubeIP &domain, int const& coordX, int const& coordY, int const
 // Compute the new state of the matrix
 void updateMatrix(cubeIP &domain, int const& step){
     // Update interior points
-    for (int j = 0; j < (*domain).n_rows; j++)
-        for (int i = 0; i < (*domain).n_cols; i++)
+    #pragma omp parallel for
+    for (int j = 0; j < (*domain).n_rows; j++){
+        for (int i = 0; i < (*domain).n_cols; i++){
             updatePixel(domain, j, i, step);
+        }
+    }
 }
 
 // Computes and writes n steps in the corresponding output files
