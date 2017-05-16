@@ -20,8 +20,6 @@
 #include <string>
 #include <cmath>
 #include <vector>
-#include <limits>
-#include <memory>
 
 #include <armadillo>
 
@@ -34,20 +32,17 @@ int main(int argc, char* argv[])
 ===================   CHECK USAGE AND INPUT FILES     =================== 
 =========================================================================*/
     // Tell the user how to run the program
-    if (argc != 4) {
-        cerr << "USAGE: " << argv[0] << " input_file_dimensions input_file_doman number_step" << endl;
+    if (argc != 3) {
+        cerr << "USAGE: " << argv[0] << " input_file_dimensions input_file_doman" << endl;
         cerr << endl;
         cerr << "    INPUT_FILE_DIMENSIONS format:" << endl;
-        cerr << "        Nx Ny" << endl;
+        cerr << "        Nx Ny nSteps" << endl;
         cerr << endl;
         cerr << "    INPUT_FILE_DOMAIN format:" << endl;
         cerr << "        a_{1,1}  ... a_{1,Ny}" << endl;
         cerr << "           ...   ...  ... " << endl;
         cerr << "        a_(Nx,1} ... a_{Nx,Ny1}" << endl;
         cerr << "    where A is the matrix that defines the initial state of the matrix." << endl;
-        cerr << endl;
-        cerr << "    NUMBER_STEPS:" << endl;
-        cerr << "    Corresponds to the number of steps to compute." << endl;
         cerr << endl;
         return 1;
     }
@@ -57,7 +52,7 @@ int main(int argc, char* argv[])
 =========================================================================*/
     std::string dimensionsFile;
     dimensionsFile = argv[1];
-    matIP domain(newConway(dimensionsFile).release());
+    cubeIP domain(newConway(dimensionsFile).release());
 
     std::string domainFile;
     domainFile = argv[2];
@@ -66,9 +61,7 @@ int main(int argc, char* argv[])
 /*=======================================================================
 ===================   COMPUTE STEPS AND WRITE OUTPUT  =================== 
 =========================================================================*/    
-    int nSteps;
-    std::stringstream(argv[3]) >> nSteps;
-    computeNSteps(domain, nSteps);
+    computeNSteps(domain);
     
     return 0;
 }

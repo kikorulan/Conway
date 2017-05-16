@@ -12,7 +12,7 @@
 #ifndef Conway_hpp
 #define Conway_hpp
 #include <cstdlib>
-#include <memory>
+//#include <memory>
 #include <vector>
 
 #include <armadillo>
@@ -22,7 +22,7 @@ using namespace arma;
 /*=======================================================================
 ======     Constructors
 =========================================================================*/
-matIP newConway(std::string &iFileName);
+cubeIP newConway(std::string &iFileName);
     /* GRIDRT opens a file under the given name and creates a GRIDRT object initialising it 
        from the data read from the file. Calls the previous GridRT constructor after reading data.
         INPUTS
@@ -43,43 +43,47 @@ matIP newConway(std::string &iFileName);
 ======     Getters
 =========================================================================*/
 
-void getDimensions(matIP &domain);
+void getDimensions(cubeIP &domain);
     // GETDIMENSIONS writes in the standard output the dimensions of the grid
 
 /*=======================================================================
 ======     Compute CGOL
 =========================================================================*/
 
-int countAliveNeigh(matIP &domain, int const& coordX, int const& coordY);
+int countAliveNeigh(cubeIP &domain, int const& coordX, int const& coordY, int const& step);
     /* COUNTALIVENEIGHBOURS returns the number of alive neighbours for the given coordinate
         INPUTS
             coordX: x coordinate of the point to compute the neighbours
             coordY: y coordinate of the point to compute the neighbours
+            step: number of step to compute
         OUTPUTS
             alive: number of alive neighbours
     */
 
-void updatePixel(matIP &domain, matIP &domainNext, int const& coordX, int const& coordY);
+void updatePixel(cubeIP &domain, int const& coordX, int const& coordY, int const& step);
     /* UPDATEPIXEL computes the new state of Conway's Game of Life for the given pixel
         INPUTS
             coordX: x coordinate of the point to update
             coordY: y coordinate of the point to update
+            step: number of step to compute
         OUTPUTS
             -
     */
 
-void updateMatrix(matIP &domain, matIP &domainNext);
+void updateMatrix(cubeIP &domain, int const& step);
     /* UPDATEMATRIX computes the new state of Conway's Game of Life for the domain
         INPUTS
             coordX: x coordinate of the point to update
             coordY: y coordinate of the point to update
+            step: number of step to compute
         OUTPUTS
             -
     */
-void computeNSteps(matIP &domain, int const& nSteps);
+
+void computeNSteps(cubeIP &domain);
     /* COMPUTENSTEPS computes and writes nSteps steps of CGOL
         INPUTS
-            nSteps: number of steps to compute
+            - 
         OUTPUTS
             -
     */
@@ -88,7 +92,7 @@ void computeNSteps(matIP &domain, int const& nSteps);
 ======     Load data from file stream
 =========================================================================*/
 
-void loadDomain(matIP &domain, std::string &iFileName);
+void loadDomain(cubeIP &domain, std::string &iFileName);
     /* LOADDOMAIN opens a file under the given name and loads from it the data into the C matrix
         INPUTS
             iFileName: input file name with the C matrix
@@ -106,7 +110,7 @@ void loadDomain(matIP &domain, std::string &iFileName);
 ======     Write to output
 =========================================================================*/
 
-void writeDomain(matIP &domain, int const& nStep);
+void writeDomain(cubeIP &domain);
     /* WRITEDOMAIN opens a file under the given name and writes the current state of the domain
         INPUTS
             nStep: step number
@@ -116,13 +120,5 @@ void writeDomain(matIP &domain, int const& nStep);
             Run time error in the following cases:
                 - Problem opening file for given file name
     */
-void writeDomain(matIP &domain);
-    /* WRITEDOMAIN writes the domain in the standard output
-        INPUTS
-            -
-        OUTPUTS
-            -
-
-*/
 
 #endif

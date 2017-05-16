@@ -22,7 +22,6 @@
 #define ARMA_USE_CXX11
 #include <armadillo>
 
-
 using namespace arma;
 
 /*=======================================================================
@@ -30,7 +29,7 @@ using namespace arma;
 =========================================================================*/
 
 // Constructor from input file stream iFile 
-matIP newConway(std::string &iFileName){
+cubeIP newConway(std::string &iFileName){
     std::ifstream iFile;
     iFile.open(iFileName);
     if (iFile.fail()){
@@ -39,20 +38,21 @@ matIP newConway(std::string &iFileName){
             << "' failed, it either doesn't exist or is not accessible.";
         throw std::runtime_error(msg.str());
     }
-    int Nx = 0, Ny = 0;
+    int Nx = 0, Ny = 0, nSteps = 0;
 
     std::string str;
     std::stringstream ss;
     getline(iFile, str);
     ss << str;
-    ss >> Nx >> Ny;
+    ss >> Nx >> Ny >> nSteps;
     ss.clear();
 
     // Check input values
     if (Nx < 1 || Ny < 1 )
         throw std::invalid_argument("CONWAY not created. Invalid value(s) for grid dimensions.\n");
 
-    matIP domain(new matI(Nx, Ny));
+    cubeIP domain(new cubeI(Nx, Ny, nSteps + 1));
+    (*domain).fill(0);
     // Message: CONWAY created
     std::cout << "CONWAY created." << std::endl;
     getDimensions(domain);
@@ -63,7 +63,7 @@ matIP newConway(std::string &iFileName){
 ====== Getters for c and n
 =========================================================================*/
 // Get the dimensions at the standard output
-void getDimensions(matIP &domain){
+void getDimensions(cubeIP &domain){
     std::cout << "Dimensions:" << std::endl;
     std::cout << "    Number of rows: " << (*domain).n_rows << std::endl;
     std::cout << "    Number of cols: " << (*domain).n_cols << std::endl;
@@ -76,60 +76,58 @@ void getDimensions(matIP &domain){
 ==============================================================================*/
 
 // Count alive neighbours
-int countAliveNeigh(matIP &domain, int const& coordX, int const& coordY){
+int countAliveNeigh(cubeIP &domain, int const& coordX, int const& coordY, int const& step){
     int alive = 0;
     int xNext = (coordX+1)%(*domain).n_rows;
     int xPrev = (coordX-1+(*domain).n_rows)%(*domain).n_rows;
     int yNext = (coordY+1)%(*domain).n_cols;
     int yPrev = (coordY-1+(*domain).n_cols)%(*domain).n_cols;
-    alive = alive + (*domain)(xPrev, yPrev);
-    alive = alive + (*domain)(coordX, yPrev);
-    alive = alive + (*domain)(xNext, yPrev);
-    alive = alive + (*domain)(xPrev, coordY);
-    alive = alive + (*domain)(xNext, coordY);
-    alive = alive + (*domain)(xPrev, yNext);
-    alive = alive + (*domain)(coordX, yNext);
-    alive = alive + (*domain)(xNext, yNext);
+    alive = alive + (*domain)(xPrev, yPrev, step);
+    alive = alive + (*domain)(coordX, yPrev, step);
+    alive = alive + (*domain)(xNext, yPrev, step);
+    alive = alive + (*domain)(xPrev, coordY, step);
+    alive = alive + (*domain)(xNext, coordY, step);
+    alive = alive + (*domain)(xPrev, yNext, step);
+    alive = alive + (*domain)(coordX, yNext, step);
+    alive = alive + (*domain)(xNext, yNext, step);
     return alive;
 }
 
 // Compute the new state of the given pixel
-void updatePixel(matIP &domain, matIP &domainNext, int const& coordX, int const& coordY){
-    int alive = countAliveNeigh(domain, coordX, coordY);
-    int state = (*domain)(coordX, coordY);
+void updatePixel(cubeIP &domain, int const& coordX, int const& coordY, int const& step){
+    int alive = countAliveNeigh(domain, coordX, coordY, step);
+    int state = (*domain)(coordX, coordY, step);
     if (state == 1){
         if (alive < 2 || alive > 3)
-            (*domainNext)(coordX, coordY) = 0;
+            (*domain)(coordX, coordY, step+1) = 0;
         else 
-            (*domainNext)(coordX, coordY) = 1;
+            (*domain)(coordX, coordY, step+1) = 1;
     }
     else {
         if (alive == 3)
-            (*domainNext)(coordX, coordY) = 1;
+            (*domain)(coordX, coordY, step+1) = 1;
         else 
-            (*domainNext)(coordX, coordY) = 0;
+            (*domain)(coordX, coordY, step+1) = 0;
     }
 }
 
 // Compute the new state of the matrix
-void updateMatrix(matIP &domain, matIP &domainNext){
+void updateMatrix(cubeIP &domain, int const& step){
     // Update interior points
     for (int j = 0; j < (*domain).n_rows; j++)
         for (int i = 0; i < (*domain).n_cols; i++)
-            updatePixel(domain, domainNext, j, i);
-    domainNext.swap(domain);
-    (*domainNext).fill(0);
+            updatePixel(domain, j, i, step);
 }
 
 // Computes and writes n steps in the corresponding output files
-void computeNSteps(matIP &domain, int const& nSteps){
-    matIP domainNext(new matI((*domain).n_rows, (*domain).n_cols));
+void computeNSteps(cubeIP &domain){
     // Create the output directory
     int i = system("mkdir -p output_data");
-    for (int i = 1; i <= nSteps; i++){
-        updateMatrix(domain, domainNext);
-        writeDomain(domain, i);
+    int nSteps = (*domain).n_slices - 1;
+    for (int i = 0; i < nSteps; i++){
+        updateMatrix(domain, i);
     }
+    writeDomain(domain);
 }
 
 /*============================================================================
@@ -142,7 +140,7 @@ void computeNSteps(matIP &domain, int const& nSteps){
 ====== Load data from file stream
 =========================================================================*/
 /* Load domain matrix from input file */
-void loadDomain(matIP &domain, std::string &iFileName){
+void loadDomain(cubeIP &domain, std::string &iFileName){
     // Open input file
     std::ifstream iFile;
     iFile.open(iFileName);
@@ -167,7 +165,7 @@ void loadDomain(matIP &domain, std::string &iFileName){
         while(ss >> val){
             if (nCol < Ny && nRow < Nx)
                 if(val == 1 || val == 0)
-                    (*domain)(nRow, nCol) = val;
+                    (*domain)(nRow, nCol, 0) = val;
                 else
                     throw std::invalid_argument(std::string("Error: Wrong value for domain matrix.\n"));
             else
@@ -189,10 +187,10 @@ void loadDomain(matIP &domain, std::string &iFileName){
 =========================================================================*/
 
 // Write output to given file
-void writeDomain(matIP &domain, int const& nStep){
+void writeDomain(cubeIP &domain){
     // Save the data
     std::ofstream outputFile;
-    std::string str = "output_data/Matrix" + std::to_string(nStep) + ".dat";
+    std::string str = "output_data/CGOL.dat";
 
     outputFile.open(str);
     if (outputFile.fail()){
@@ -201,22 +199,14 @@ void writeDomain(matIP &domain, int const& nStep){
             << "' failed, could not be created.";
         throw std::runtime_error(msg.str());
     }
-    
-    for (int j = 0; j < (*domain).n_rows; j++){
-        for (int i = 0; i < (*domain).n_cols; i++)
-            outputFile << (*domain)(j, i) << " ";
-        outputFile << std::endl;
+    for (int k = 0; k < (*domain).n_slices; k++){
+        for (int j = 0; j < (*domain).n_rows; j++){
+            for (int i = 0; i < (*domain).n_cols; i++)
+                outputFile << (*domain)(j, i, k) << " ";
+            outputFile << std::endl;
+        }
     }
     outputFile.close();
-}
-
-// Write output in the standard output
-void writeDomain(matIP &domain){
-    for (int j = 0; j < (*domain).n_rows; j++){
-        for (int i = 0; i < (*domain).n_cols; i++)
-            std::cout << (*domain)(j, i) << " ";
-        std::cout << std::endl;
-    }
 }
 
 

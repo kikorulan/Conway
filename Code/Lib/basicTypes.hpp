@@ -49,5 +49,6 @@ typedef Row<int> rowvecI;
 typedef std::unique_ptr<rowvecI> rowvecIP;
 typedef Mat<int> matI;
 typedef std::unique_ptr<matI> matIP;
-
+typedef Cube<int> cubeI;
+typedef std::unique_ptr<cubeI> cubeIP;
 #endif

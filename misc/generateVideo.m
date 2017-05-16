@@ -1,23 +1,30 @@
 % Read data from files
 clear all;
 
-% Create video handle
-v = VideoWriter('ConwayGOL.avi');
-v.FrameRate = 10;
-open(v);
-
-cd output_data;
-% Number of steps
-nSteps = 200; 
 % Read files
 delimiterIn = ' ';
 headerlinesIn = 0;
-for n = 1:nSteps
-    filename = strcat('Matrix', int2str(n),'.dat');
-    matrix{n} = importdata(filename, delimiterIn, headerlinesIn);
-    writeVideo(v,matrix{n});
+% Import data
+filenameData = 'CGOL.dat';
+matrix = importdata(filenameData, delimiterIn, headerlinesIn);
+% Import dimensions
+filenameDimensions = 'dimensions.dat';
+dim = importdata(filenameDimensions, delimiterIn, headerlinesIn);
+dimX = dim(1);
+dimY = dim(2);
+nSteps = dim(3);
+
+% Create video handle
+v = VideoWriter('ConwayGOL.avi');
+v.FrameRate = 30;
+open(v);
+
+
+% Generate video
+for n = 0:nSteps
+    writeVideo(v,matrix(1+n*dimX:(n+1)*dimX, :));
 end
 
 
 close(v);
-cd ..;
+
