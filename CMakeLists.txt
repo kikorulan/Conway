@@ -78,6 +78,25 @@ set(ALL_THIRD_PARTY_LIBRARIES)
 set(CONWAY_LIBRARY conwayGL)
 set(ADDITIONAL_SEARCH_PATHS ${CMAKE_BINARY_DIR}/bin/${VS_BUILD_TYPE})
 
+##############################################################################
+# Find MPI
+##############################################################################
+find_package(MPI REQUIRED)
+# include_directories(${MPI_INCLUDE_PATH})
+
+
+# if(MPI_COMPILE_FLAGS)
+#   set (CMAKE_C_COMPILE_FLAGS "${CMAKE_C_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS}")
+#   set (CMAKE_CXX_COMPILE_FLAGS "${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+# endif()
+# 
+# if(MPI_LINK_FLAGS)
+#   set (CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${MPI_LINK_FLAGS}")
+#   set (CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS}")
+# endif()
+
+
+# list(APPEND ${ALL_THIRD_PARTY_LIBRARIES} ${MPI_LIBRARIES})
 ######################################################################
 # Add code folders.
 ######################################################################
