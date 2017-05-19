@@ -22,7 +22,9 @@
 #define ARMA_USE_CXX11
 #include <armadillo>
 
-using namespace arma;
+#include <boost/mpi.hpp>
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
 
 /*=======================================================================
 ====== Constructors
@@ -188,9 +190,14 @@ void loadDomain(cubeIP &domain, std::string &iFileName){
 
 // Write output to given file
 void writeDomain(cubeIP &domain){
+
+    boost::mpi::environment env;
+    boost::mpi::communicator world;
+
     // Save the data
     std::ofstream outputFile;
     std::string str = "output_data/CGOL.dat";
+    //std::string str = "output_data/Source" + std::to_string(world.rank()) + ".dat";
 
     outputFile.open(str);
     if (outputFile.fail()){
