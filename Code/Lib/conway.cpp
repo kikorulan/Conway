@@ -25,6 +25,9 @@
 #include <boost/mpi.hpp>
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
+#include <boost/serialization/vector.hpp>
+
+
 
 /*=======================================================================
 ====== Constructors
@@ -69,6 +72,7 @@ void getDimensions(cubeIP &domain){
     std::cout << "Dimensions:" << std::endl;
     std::cout << "    Number of rows: " << (*domain).n_rows << std::endl;
     std::cout << "    Number of cols: " << (*domain).n_cols << std::endl;
+    std::cout << "    Number of steps: " << (*domain).n_slices << std::endl;
 }
 
 /*============================================================================
@@ -190,10 +194,6 @@ void loadDomain(cubeIP &domain, std::string &iFileName){
 
 // Write output to given file
 void writeDomain(cubeIP &domain){
-
-    boost::mpi::environment env;
-    boost::mpi::communicator world;
-
     // Save the data
     std::ofstream outputFile;
     std::string str = "output_data/CGOL.dat";
@@ -216,4 +216,175 @@ void writeDomain(cubeIP &domain){
     outputFile.close();
 }
 
+
+// Write output to given file
+void writeDomain(cubeIP &domain, int nStep, std::ofstream &outputFile){
+    // Save the data
+    for (int j = 0; j < (*domain).n_rows; j++){
+        for (int i = 0; i < (*domain).n_cols; i++)
+            outputFile << (*domain)(j, i, nStep) << " ";
+        outputFile << std::endl;
+    }
+}
+
+
+/*============================================================================
+==============                                            ====================
+==============         MPI: Communication between threads ====================
+==============                                            ====================
+==============================================================================*/
+
+// Send dimensions from master to other threads
+void sendDimensions(cubeIP &domain){
+
+    boost::mpi::environment env;
+    boost::mpi::communicator world;
+
+    // Send dimensions to other threads
+    std::vector<long long unsigned int> dimensions(3);
+    long long unsigned int nCols = ceil((float)(*domain).n_cols/(world.size()-1)) + 2;
+    dimensions = {(*domain).n_rows, nCols, (*domain).n_slices};
+    for (int n = 1; n <= world.size()-2;  n++)
+        world.send(n, 0, dimensions);  // send dimensions      
+    dimensions[1] = (*domain).n_cols - ceil((float)(*domain).n_cols/(world.size()-1))*(world.size()-2) + 2; // remaining 
+    world.send(world.size()-1, 0, dimensions); // remaining columns
+}
+
+// Send initial subdomains from master to other threads
+void sendSubdomains(cubeIP &domain){
+
+    boost::mpi::environment env;
+    boost::mpi::communicator world;
+
+    // Find dimensions for threads
+    int nCols = ceil((float)(*domain).n_cols/(world.size()-1));
+    for (int n = 1; n <= world.size()-2;  n++){
+        std::vector< std::vector<int> > subdomain((*domain).n_rows, std::vector<int>(nCols));
+        conwaySubdomain cSD(subdomain);
+        for (int i = 0; i < (*domain).n_rows; i++){
+            for (int j = 0; j < nCols; j++){
+                int k = (n-1)*nCols + j; 
+                cSD.subdomain[i][j] = (*domain)(i, k, 0);
+            }
+        }
+        world.send(n, 1, cSD);
+    }
+
+    int nColsEnd = (*domain).n_cols - nCols*(world.size()-2); // remaining columns
+    std::vector< std::vector<int> > subdomain((*domain).n_rows, std::vector<int>(nColsEnd));
+    conwaySubdomain cSD(subdomain);
+    for (int i = 0; i < (*domain).n_rows; i++){
+        for (int j = 0; j < nColsEnd; j++){
+            int k = nCols*(world.size()-2) + j; 
+            cSD.subdomain[i][j] = (*domain)(i, k, 0);
+        }
+    }
+    world.send(world.size()-1, 1, cSD);
+}
+
+// Receive initial subdomain from master
+void receiveSubdomain(cubeIP &domain){
+    boost::mpi::environment env;
+    boost::mpi::communicator world;
+    
+    std::vector< std::vector<int> > subdomain((*domain).n_rows, std::vector<int>((*domain).n_cols-2));
+    conwaySubdomain cSD(subdomain);
+    world.recv(0, 1, cSD); // receive subdomain from master
+
+    for (int i = 0; i < (*domain).n_rows; i++)
+        for (int j = 0; j < (*domain).n_cols-2; j++)
+            (*domain)(i, j+1, 0) = cSD.subdomain[i][j]; // copy to worker 
+
+}
+
+// Send subdomain from worker thread to master
+void sendSubdomainMaster(cubeIP &domain, int nStep){
+    boost::mpi::environment env;
+    boost::mpi::communicator world;
+
+    std::vector< std::vector<int> > subdomain((*domain).n_rows, std::vector<int>((*domain).n_cols-2));
+    conwaySubdomain cSD(subdomain);
+    
+    for (int i = 0; i < (*domain).n_rows; i++)
+        for (int j = 0; j < (*domain).n_cols-2; j++)
+            cSD.subdomain[i][j] = (*domain)(i, j+1, nStep); // copy subdomain to send
+    world.send(0, 2, cSD); // send subdomain to master
+}
+
+
+// Receive subdomains from worker threads
+void receiveSubdomainsMaster(cubeIP &domain, int nStep){
+    boost::mpi::environment env;
+    boost::mpi::communicator world;
+
+    // Find dimensions for threads
+    int nCols = ceil((float)(*domain).n_cols/(world.size()-1));
+    for (int n = 1; n <= world.size()-2;  n++){
+        std::vector< std::vector<int> > subdomain((*domain).n_rows, std::vector<int>(nCols));
+        conwaySubdomain cSD(subdomain);
+        world.recv(n, 2, cSD);
+
+        for (int i = 0; i < (*domain).n_rows; i++){
+            for (int j = 0; j < nCols; j++){
+                int k = (n-1)*nCols + j; 
+                (*domain)(i, k, nStep) = cSD.subdomain[i][j]; // copy to domain
+            }
+        }
+    }
+
+    int nColsEnd = (*domain).n_cols - nCols*(world.size()-2); // remaining columns
+    std::vector< std::vector<int> > subdomain((*domain).n_rows, std::vector<int>(nColsEnd));
+    conwaySubdomain cSD(subdomain);
+    world.recv(world.size()-1, 2, cSD);
+    for (int i = 0; i < (*domain).n_rows; i++){
+        for (int j = 0; j < nColsEnd; j++){
+            int k = nCols*(world.size()-2) + j; 
+            (*domain)(i, k, nStep) = cSD.subdomain[i][j]; // copy to domain
+        }
+    }
+
+}
+
+
+// Send boundaries to neighbour workers
+void sendBoundaries(cubeIP &domain, int nStep){
+
+    boost::mpi::environment env;
+    boost::mpi::communicator world;
+    
+    std::vector<int> col((*domain).n_rows);
+    conwayBoundary cBPrev(col);
+    conwayBoundary cBNext(col);
+    for (int n = 0; n < (*domain).n_rows; n++){
+        cBPrev.col[n] = (*domain)(n, 1, nStep);
+        cBNext.col[n] = (*domain)(n, (*domain).n_cols-2, nStep);
+    }
+
+    int procPrev = (world.rank()+world.size()-3)%(world.size()-1) + 1;
+    world.send(procPrev, 3, cBPrev);
+    int procNext = world.rank()%(world.size()-1) + 1;
+    world.send(procNext, 3, cBNext);
+}
+
+// Receive boundaries from neighbour workers
+void receiveBoundaries(cubeIP &domain, int nStep){
+
+    boost::mpi::environment env;
+    boost::mpi::communicator world;
+    
+    std::vector<int> col((*domain).n_rows);
+    conwayBoundary cBPrev(col);
+    conwayBoundary cBNext(col);
+    int procPrev = (world.rank()+world.size()-3)%(world.size()-1) + 1;
+    world.recv(procPrev, 3, cBPrev);
+    int procNext = world.rank()%(world.size()-1) + 1;
+    world.recv(procNext, 3, cBNext);
+
+    for (int n = 0; n < (*domain).n_rows; n++){
+        (*domain)(n, 0, nStep) = cBPrev.col[n];
+        (*domain)(n, (*domain).n_cols-1, nStep) = cBNext.col[n];
+    }
+
+
+}    
 

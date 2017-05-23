@@ -28,26 +28,6 @@
 #include <boost/mpi/communicator.hpp>
 #include <boost/serialization/vector.hpp>
 
-class conwaySubdomain
-{
-private:
- friend class boost::serialization::access;
-
-template<class Archive>
- void serialize(Archive &ar, const unsigned int version)
- {
-    for (int i = 0; i < subdomain.size(); i++)
-        ar & boost::serialization::make_array(subdomain[i].data(), subdomain[i].size());
-    //ar & subdomain; 
- }
-
-public:
- std::vector< std::vector<int> > subdomain;
-
- conwaySubdomain() {};
- conwaySubdomain(std::vector< std::vector<int> > sd) :subdomain(sd) {}
-};
-
 
 int main(int argc, char* argv[])
 {
@@ -84,33 +64,40 @@ int main(int argc, char* argv[])
         cubeIP domain(newConway(dimensionsFile).release());
 
         // Send dimensions to other threads
-        std::vector<long long unsigned int> dimensions(3);
-        long long unsigned int nCols = ceil((float)(*domain).n_cols/(world.size()-1));
-        dimensions = {(*domain).n_rows, nCols, (*domain).n_slices};
-        for (int n = 1; n <= world.size()-2;  n++)
-            world.send(n, 0, dimensions);            
-        dimensions[1] = (*domain).n_cols - ceil((float)(*domain).n_cols/(world.size()-1))*(world.size()-2) + 2; // remaining 
-        world.send(world.size()-1, 0, dimensions);
-    
-        // Send subdomain to other threads
-        std::vector< std::vector<int> > subdomain(3, std::vector<int>(3));
-        subdomain[1][1] = 10;
-        subdomain[2][1] = 20;
+        sendDimensions(domain);
 
-        conwaySubdomain cSD(subdomain);
- 
-        for (int n = 1; n <= world.size()-1;  n++)
-            world.send(n, 1, cSD);            
         // Load domain
         std::string domainFile;
         domainFile = argv[2];
         loadDomain(domain, domainFile);
+
+        // Send subdomains to the other threads
+        sendSubdomains(domain);
     
     /*=======================================================================
     ===================   COMPUTE STEPS AND WRITE OUTPUT  =================== 
     =========================================================================*/    
-        computeNSteps(domain);
         
+        // Save the data
+        std::ofstream outputFile;
+        std::string str = "output_data/CGOL.dat";
+        //std::string str = "output_data/Source" + std::to_string(world.rank()) + ".dat";
+    
+        outputFile.open(str);
+        if (outputFile.fail()){
+            std::ostringstream msg;
+            msg << "writeDomain(): Opening file '" << str
+                << "' failed, could not be created.";
+            throw std::runtime_error(msg.str());
+        }
+
+        writeDomain(domain, 0, outputFile);
+        for (int n = 1; n < (*domain).n_slices; n++){
+            receiveSubdomainsMaster(domain, n);
+            writeDomain(domain, n, outputFile);
+        }
+        
+        outputFile.close();
     }
 
     else {
@@ -118,24 +105,20 @@ int main(int argc, char* argv[])
         std::vector<long long unsigned int> dimensions(3);
         world.recv(0, 0, dimensions);
 
-        std::cout << "Process " << world.rank() << " dimensions: " <<
-                    dimensions[0] << " " << dimensions[1] << " " << dimensions[2] << std::endl; 
-
-
+        // Create subdomain for this thread
+        cubeIP subdomain(new cubeI(dimensions[0], dimensions[1], dimensions[2]));
         // Receive subdomain    
-        std::vector< std::vector<int> > subdomain(3, std::vector<int>(3));
-        conwaySubdomain cSD(subdomain);
-        world.recv(0, 1, cSD);
-        std::cout << "Process " << world.rank() << " subdomain: " << std::endl;
+        receiveSubdomain(subdomain);
 
-        for (int j = 0; j <= 2; j++){
-            for (int i = 0; i <= 2; i++){
-                    std::cout << cSD.subdomain[i][j] << " ";
-            }
-            std::cout << std::endl;
+        // Compute steps
+        for (int n = 0; n < dimensions[2]-1; n++){
+            sendBoundaries(subdomain, n);   // Send boundaries
+            receiveBoundaries(subdomain, n);// Receive boundaries
+            updateMatrix(subdomain, n);     // Compute step
+            sendSubdomainMaster(subdomain, n+1); // Send subdomain to master
         }
 
-        
+
     }
 
     return 0;

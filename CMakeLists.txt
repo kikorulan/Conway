@@ -78,25 +78,49 @@ set(ALL_THIRD_PARTY_LIBRARIES)
 set(CONWAY_LIBRARY conwayGL)
 set(ADDITIONAL_SEARCH_PATHS ${CMAKE_BINARY_DIR}/bin/${VS_BUILD_TYPE})
 
-##############################################################################
-# Find MPI
-##############################################################################
+
+######################################################################
+# MPI
+######################################################################
+
 find_package(MPI REQUIRED)
-# include_directories(${MPI_INCLUDE_PATH})
+list(APPEND ALL_THIRD_PARTY_LIBRARIES ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
+include_directories(${MPI_C_INCLUDE_PATH})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_C_COMPILE_FLAGS}")
 
 
-# if(MPI_COMPILE_FLAGS)
-#   set (CMAKE_C_COMPILE_FLAGS "${CMAKE_C_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS}")
-#   set (CMAKE_CXX_COMPILE_FLAGS "${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-# endif()
-# 
-# if(MPI_LINK_FLAGS)
-#   set (CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${MPI_LINK_FLAGS}")
-#   set (CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS}")
-# endif()
+######################################################################
+# Boost
+######################################################################
+
+# Example of:
+#   (1) Standard, widely used library
+#   (2) Mostly header library, some compiled libraries
+#   (3) Your CMake probably has a standard FindBoost.cmake in its distribution,
+#       so Boost is probably found by CMake's own FindBoost.cmake.
+
+set(BOOST_LIBRARYDIR "/usr/lib/x86_64-linux-gnu")
+set(BOOST_INCLUDEDIR "/usr/include/boost")
+set(Boost_DEBUG ON)
+set(Boost_NO_SYSTEM_PATHS ON)
+set(Boost_NO_BOOST_CMAKE ON)
+if(BUILD_SHARED_LIBS)
+  set(Boost_USE_STATIC_LIBS OFF)
+  set(Boost_USE_STATIC_RUNTIME OFF)
+else()
+  set(Boost_USE_STATIC_LIBS ON)
+  set(Boost_USE_STATIC_RUNTIME ON) 
+endif()
+#find_package(Boost 1.56 EXACT COMPONENTS filesystem system date_time regex REQUIRED)
+find_package(Boost COMPONENTS mpi REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
+
+list(APPEND ALL_THIRD_PARTY_LIBRARIES ${Boost_LIBRARIES})
+add_definitions(-DBUILD_Boost)
+set(ADDITIONAL_SEARCH_PATHS "${BOOST_ROOT}/bin;${ADDITIONAL_SEARCH_PATHS}")
 
 
-# list(APPEND ${ALL_THIRD_PARTY_LIBRARIES} ${MPI_LIBRARIES})
 ######################################################################
 # Add code folders.
 ######################################################################
