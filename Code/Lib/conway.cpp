@@ -192,6 +192,7 @@ void writeDomain(cubeIP &domain){
     std::ofstream outputFile;
     std::string str = "output_data/CGOL.dat";
 
+    // Domain
     outputFile.open(str);
     if (outputFile.fail()){
         std::ostringstream msg;
@@ -207,6 +208,19 @@ void writeDomain(cubeIP &domain){
         }
     }
     outputFile.close();
+
+    // Dimensions
+    str = "output_data/dimensions.dat";
+    outputFile.open(str);
+    if (outputFile.fail()){
+        std::ostringstream msg;
+        msg << "writeDomain(): Opening file '" << str
+            << "' failed, could not be created.";
+        throw std::runtime_error(msg.str());
+    }
+    outputFile << (*domain).n_rows << " " << (*domain).n_cols << " " << (*domain).n_slices-1;
+    outputFile.close();
+
 }
 
 
