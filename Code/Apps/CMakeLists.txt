@@ -1,8 +1,8 @@
 
-set(MYPROJECT_APPS
-    runConway
-)
-foreach(app ${MYPROJECT_APPS})
-  add_executable(${app} ${app}.cpp)
-  target_link_libraries(${app} conwayGL ${ALL_THIRD_PARTY_LIBRARIES})
-endforeach()
+if(PARALLEL_OMP)
+    set(APP runConwayOMP)
+else()
+    set(APP runConway)
+endif()    
+add_executable(${APP} runConway.cpp)
+target_link_libraries(${APP} conwayGL ${ALL_THIRD_PARTY_LIBRARIES})

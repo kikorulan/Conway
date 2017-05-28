@@ -26,8 +26,6 @@
 #include <omp.h>
 #endif
 
-using namespace arma;
-
 /*=======================================================================
 ====== Constructors
 =========================================================================*/
@@ -128,6 +126,9 @@ void updateMatrix(cubeIP &domain, int const& step){
 
 // Computes and writes n steps in the corresponding output files
 void computeNSteps(cubeIP &domain){
+    #ifdef _OPENMP
+    std::cout << "Computing CGOL using " << omp_get_max_threads() << " threads..." << std::endl;
+    #endif
     // Create the output directory
     int i = system("mkdir -p output_data");
     int nSteps = (*domain).n_slices - 1;
