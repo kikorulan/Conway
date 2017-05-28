@@ -16,8 +16,10 @@
 #include <vector>
 #include <armadillo>
 
-using namespace arma;
-using namespace std;
+#include <boost/mpi.hpp>
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/serialization/vector.hpp>
 
 void Test_Number(int i){
     cout << "==============================================================" << endl;

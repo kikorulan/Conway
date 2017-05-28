@@ -72,7 +72,6 @@ void getDimensions(cubeIP &domain){
     std::cout << "Dimensions:" << std::endl;
     std::cout << "    Number of rows: " << (*domain).n_rows << std::endl;
     std::cout << "    Number of cols: " << (*domain).n_cols << std::endl;
-    std::cout << "    Number of steps: " << (*domain).n_slices << std::endl;
 }
 
 /*============================================================================
