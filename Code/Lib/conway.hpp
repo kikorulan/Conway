@@ -228,7 +228,7 @@ void sendBoundaries(cubeIP &domain, int nStep);
     */
 
 void receiveBoundaries(cubeIP &domain, int nStep);
-    /* SENDBOUNDARIES receives the boundaries from the neighbour worker threads for step nStep
+    /* RECEIVEBOUNDARIES receives the boundaries from the neighbour worker threads for step nStep
         INPUTS
             domain: CGOL domain
         OUTPUTS

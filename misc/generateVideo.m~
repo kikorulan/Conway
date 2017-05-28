@@ -1,7 +1,0 @@
-
-% Read data from files
-
-filename = 'myfile01.txt';
-delimiterIn = ' ';
-headerlinesIn = 1;
-A = importdata(filename,delimiterIn,headerlinesIn);
