@@ -66,6 +66,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED 1)
 
 add_compile_options(-std=c++11)
 
+   
+######################################################################
+# Cuda
+######################################################################
+set(CMAKE_CXX_COMPILER "/opt/cuda/cuda-8.0/bin/nvcc")
+set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
+add_compile_options(--x cu)
+add_compile_options(-lcublas)
+#add_compile_options(-arch sm_35)
+
 ##############################################################################
 # Build options.
 ##############################################################################

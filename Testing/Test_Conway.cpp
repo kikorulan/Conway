@@ -9,7 +9,6 @@
 
 #include "catch.hpp"
 #include "Conway_CatchMain.hpp"
-#include "basicTypes.hpp"
 #include "conway.hpp"
 #include <iostream>
 #include <memory>

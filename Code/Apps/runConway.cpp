@@ -12,19 +12,17 @@
 
 =============================================================================*/
 
+#define N 512
+
 #include <conway.hpp>
-#include <basicTypes.hpp>
+//#include <basicTypes.hpp>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <cmath>
 #include <vector>
-
-#include <armadillo>
-
-using namespace std;
-using namespace arma;
+#include <cstdlib>
 
 int main(int argc, char* argv[])
 {
@@ -33,27 +31,29 @@ int main(int argc, char* argv[])
 =========================================================================*/
     // Tell the user how to run the program
     if (argc != 3) {
-        cerr << "USAGE: " << argv[0] << " input_file_dimensions input_file_doman" << endl;
-        cerr << endl;
-        cerr << "    INPUT_FILE_DIMENSIONS format:" << endl;
-        cerr << "        Nx Ny nSteps" << endl;
-        cerr << endl;
-        cerr << "    INPUT_FILE_DOMAIN format:" << endl;
-        cerr << "        a_{1,1}  ... a_{1,Ny}" << endl;
-        cerr << "           ...   ...  ... " << endl;
-        cerr << "        a_(Nx,1} ... a_{Nx,Ny1}" << endl;
-        cerr << "    where A is the matrix that defines the initial state of the matrix." << endl;
-        cerr << endl;
+        std::cerr << "USAGE: " << argv[0] << " input_file_dimensions input_file_doman" << std::endl;
+        std::cerr << std::endl;
+        std::cerr << "    INPUT_FILE_DIMENSIONS format:" << std::endl;
+        std::cerr << "        Nx Ny nSteps" << std::endl;
+        std::cerr << std::endl;
+        std::cerr << "    INPUT_FILE_DOMAIN format:" << std::endl;
+        std::cerr << "        a_{1,1}  ... a_{1,Ny}" << std::endl;
+        std::cerr << "           ...   ...  ... " << std::endl;
+        std::cerr << "        a_(Nx,1} ... a_{Nx,Ny1}" << std::endl;
+        std::cerr << "    where A is the matrix that defines the initial state of the matrix." << std::endl;
+        std::cerr << std::endl;
         return 1;
     }
 
 /*=======================================================================
-===================   DEFINE GRID AND SOURCES         =================== 
+===================   DEFINE DOMAIN                   =================== 
 =========================================================================*/
+    // Create initial matrix
     std::string dimensionsFile;
     dimensionsFile = argv[1];
-    cubeIP domain(newConway(dimensionsFile).release());
-
+    int *domain = newConway(dimensionsFile);
+    
+    // Load initial domain
     std::string domainFile;
     domainFile = argv[2];
     loadDomain(domain, domainFile);
@@ -61,7 +61,12 @@ int main(int argc, char* argv[])
 /*=======================================================================
 ===================   COMPUTE STEPS AND WRITE OUTPUT  =================== 
 =========================================================================*/    
+    // Compute CGOL
     computeNSteps(domain);
-    
+    // Write to file
+    writeDomain(domain);
+   
+    // Free memory
+    free(domain);
     return 0;
 }
