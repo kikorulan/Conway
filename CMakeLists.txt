@@ -66,11 +66,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED 1)
 
 add_compile_options(-std=c++11)
 
-##############################################################################
-# Build options.
-##############################################################################
-option(BUILD_TESTING "Build Unit tests." ON)
-
 ######################################################################
 # Add Mandatory Requirements
 ######################################################################
@@ -89,10 +84,3 @@ foreach(type LIBRARY RUNTIME ARCHIVE)
 endforeach()
 include_directories(${CMAKE_SOURCE_DIR}/Code/Lib)
 add_subdirectory(Code)
-#add_subdirectory(Documentation)
-if(BUILD_TESTING)
-  set(TEMP_DIR ${CMAKE_BINARY_DIR}/Testing/Temporary)
-  include_directories(${CMAKE_SOURCE_DIR}/Testing/)
-  add_subdirectory(Testing)
-endif()
-
